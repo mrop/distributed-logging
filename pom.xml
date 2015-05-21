@@ -225,25 +225,59 @@
             </modules>
         </profile>
 
+
+
+
         <profile>
-            <id>cargo.run</id>
+            <id>cargo.run2</id>
+            <properties>
+                <repo.base.path>${project.basedir}</repo.base.path>
+                <repo.path>${project.build.directory}/storage</repo.path>
+                <repo.config/>
+                <repo.bootstrap/>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>jcl-over-slf4j</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
             <build>
+                <defaultGoal>initialize</defaultGoal>
                 <plugins>
                     <plugin>
                         <groupId>org.codehaus.cargo</groupId>
                         <artifactId>cargo-maven2-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>cargo-run</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                         <configuration>
                             <configuration>
+                                <home>${project.build.directory}/tomcat${cargo.tomcat.major.version}x</home>
                                 <properties>
-                                    <catalina.servlet.uriencoding>UTF-8</catalina.servlet.uriencoding>
+                                    <cargo.jvmargs>
+                                        <![CDATA[-Xdebug -Xrunjdwp:transport=dt_socket,address=${cargo.debug.address},server=y,suspend=${cargo.debug.suspend} -noverify ${javaagent} ${cargo.jvm.args}]]>
+                                    </cargo.jvmargs>
+                                    <cargo.servlet.uriencoding>UTF-8</cargo.servlet.uriencoding>
+                                    <cargo.servlet.users>admin::manager-script,manager-gui</cargo.servlet.users>
                                 </properties>
-                                <configfiles>
-                                    <configfile>
-                                        <file>${project.basedir}/conf/context.xml</file>
-                                        <todir>conf/</todir>
-                                        <tofile>context.xml</tofile>
-                                    </configfile>
-                                </configfiles>
                             </configuration>
                             <deployables>
                                 <deployable>
@@ -260,35 +294,34 @@
                                         <context>/site</context>
                                     </properties>
                                 </deployable>
-                                <deployable>
+                                <!--<deployable>
                                     <location>${project.basedir}/essentials/target/essentials.war</location>
                                     <type>war</type>
                                     <properties>
                                         <context>/essentials</context>
                                     </properties>
-                                </deployable>
+                                </deployable>-->
                             </deployables>
                             <container>
                                 <systemProperties>
-                                    <derby.stream.error.file>${project.basedir}/target/derby.log
-                                    </derby.stream.error.file>
-                                    <log4j.configuration>file:${project.basedir}/conf/log4j-dev.xml
-                                    </log4j.configuration>
-                                    <rebel.log4j-plugin>true</rebel.log4j-plugin>
-                                    <!-- enables auto export: -->
-                                    <project.basedir>${project.basedir}</project.basedir>
+                                    <repo.base.path>${repo.base.path}</repo.base.path>
+                                    <repo.path>${repo.path}</repo.path>
+                                    <repo.config>${repo.config}</repo.config>
+                                    <repo.bootstrap>${repo.bootstrap}</repo.bootstrap>
                                 </systemProperties>
-                                <!-- overwrite dependencies to exclude log4j and slf4j dependencies -->
+                                <zipUrlInstaller>
+                                    <downloadDir>
+                                        ${settings.localRepository}/org/codehaus/cargo/cargo-container-archives
+                                    </downloadDir>
+                                    <url>${cargo.tomcat.distribution.url}</url>
+                                </zipUrlInstaller>
+                                <timeout>600000</timeout>
                                 <dependencies>
-                                    <dependency>
-                                        <groupId>org.onehippo.cms7</groupId>
-                                        <artifactId>hippo-cms7-commons</artifactId>
-                                        <classpath>shared</classpath>
-                                    </dependency>
+
                                     <dependency>
                                         <groupId>org.onehippo.cms7</groupId>
                                         <artifactId>hippo-services</artifactId>
-                                        <classpath>shared</classpath>
+                                        <classpath>shared</classpath>k
                                     </dependency>
                                     <dependency>
                                         <groupId>org.onehippo.cms7</groupId>
@@ -300,9 +333,44 @@
                                         <artifactId>hippo-repository-builtin</artifactId>
                                         <classpath>shared</classpath>
                                     </dependency>
+
+                                    <dependency>
+                                        <groupId>org.apache.geronimo.specs</groupId>
+                                        <artifactId>geronimo-jta_1.1_spec</artifactId>
+                                        <classpath>extra</classpath>
+                                    </dependency>
+                                    <dependency>
+                                        <groupId>javax.jcr</groupId>
+                                        <artifactId>jcr</artifactId>
+                                        <classpath>extra</classpath>
+                                    </dependency>
+                                    <dependency>
+                                        <groupId>javax.mail</groupId>
+                                        <artifactId>mail</artifactId>
+                                        <classpath>extra</classpath>
+                                    </dependency>
                                 </dependencies>
                             </container>
                         </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>cargo-started</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <echo>${cargo.started.message}</echo>
+                                        <sleep hours="2147483647"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
